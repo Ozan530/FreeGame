@@ -1,136 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>445577 Clicker Game</title>
+  <title>Multiplayer Clicker</title>
   <style>
     body {
       font-family: Arial;
       text-align: center;
-      background: #0b0b0b;
+      background: #111;
       color: white;
     }
 
-    button, input {
-      padding: 10px;
-      margin: 5px;
+    button {
+      padding: 15px;
+      font-size: 18px;
     }
 
     .box {
+      margin-top: 20px;
       border: 1px solid #333;
-      padding: 15px;
-      margin: 10px auto;
-      width: 320px;
-      background: #1c1c1c;
-      border-radius: 10px;
-    }
-
-    #win {
-      color: gold;
-      display: none;
-      font-size: 24px;
+      padding: 10px;
+      display: inline-block;
+      width: 300px;
     }
   </style>
 </head>
 
 <body>
 
-<h1>💰 445577 CLICKER</h1>
+<h1>🌐 Multiplayer Clicker</h1>
 
-<h2>Puan: <span id="puan">0</span></h2>
-<h3>Tık Gücü: <span id="guc">1</span></h3>
+<h2>Senin Skorun: <span id="me">0</span></h2>
 
 <button onclick="clickMe()">TIKLA 💥</button>
 
-<!-- MARKET -->
 <div class="box">
-  <h3>🛒 Market</h3>
-  <button onclick="buyPower()">+1 Güç (50)</button>
-  <button onclick="buyAuto()">Auto (100)</button>
+  <h3>🏆 Leaderboard</h3>
+  <div id="board"></div>
 </div>
-
-<!-- CODE -->
-<div class="box">
-  <h3>🎟️ Kod Sistemi</h3>
-  <input id="code" placeholder="Kod gir">
-  <button onclick="useCode()">Kullan</button>
-  <p id="msg"></p>
-</div>
-
-<h2 id="win">🏆 KAZANDIN!</h2>
 
 <script>
-let puan = 0;
-let guc = 1;
-let auto = 0;
-let used = [];
+let ws;
+let myId = null;
+let myScore = 0;
 
-// CLICK
+ws = new WebSocket("ws://localhost:8080");
+
+ws.onmessage = (msg) => {
+  let data = JSON.parse(msg.data);
+
+  if (data.type === "id") {
+    myId = data.id;
+  }
+
+  if (data.type === "update") {
+    render(data.players);
+  }
+};
+
 function clickMe() {
-  puan += guc;
-  update();
+  myScore++;
+
+  ws.send(JSON.stringify({
+    type: "click"
+  }));
 }
 
-// MARKET
-function buyPower() {
-  if (puan >= 50) {
-    puan -= 50;
-    guc++;
-    update();
-  }
-}
+function render(players) {
+  let board = document.getElementById("board");
+  board.innerHTML = "";
 
-function buyAuto() {
-  if (puan >= 100) {
-    puan -= 100;
-    auto++;
+  let arr = Object.entries(players)
+    .sort((a,b)=>b[1].score - a[1].score);
 
-    setInterval(() => {
-      puan += auto;
-      update();
-    }, 1000);
-  }
-}
+  arr.forEach(([id, p]) => {
+    let div = document.createElement("div");
 
-// CODE
-function useCode() {
-  let c = document.getElementById("code").value.toUpperCase();
+    div.innerText =
+      (id === myId ? "👉 " : "") +
+      id + " : " + p.score;
 
-  if (used.includes(c)) return msg("Kod kullanıldı!");
+    board.appendChild(div);
 
-  if (c === "VIP") {
-    puan += 100;
-    msg("+100!");
-  }
-  else if (c === "POWER") {
-    guc += 2;
-    msg("+2 güç!");
-  }
-  else if (c === "WIN") {
-    puan += 1000000000;
-    msg("DEV BONUS!");
-  }
-  else {
-    msg("Geçersiz kod");
-    return;
-  }
-
-  used.push(c);
-  update();
-}
-
-// UPDATE
-function update() {
-  document.getElementById("puan").innerText = puan;
-  document.getElementById("guc").innerText = guc;
-
-  if (puan >= 1000) {
-    document.getElementById("win").style.display = "block";
-  }
-}
-
-function msg(t) {
-  document.getElementById("msg").innerText = t;
+    if (id === myId) {
+      document.getElementById("me").innerText = p.score;
+    }
+  });
 }
 </script>
 
