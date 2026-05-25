@@ -1,22 +1,194 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Süper Oyun</title>
+  <title>Tycoon PRO MAX SECURITY</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial;
+      background: #0b0b0b;
+      color: white;
+    }
+
+    button, input {
+      padding: 10px;
+      margin: 5px;
+    }
+
+    .box {
+      border: 1px solid #333;
+      padding: 12px;
+      margin: 10px auto;
+      width: 320px;
+      background: #1c1c1c;
+      border-radius: 10px;
+    }
+
+    #warn { color: orange; font-weight: bold; }
+    #ban { color: red; font-size: 22px; display:none; }
+  </style>
 </head>
-<body style="text-align:center; font-family:sans-serif;">
 
-<h1>Süper Düper Oyun 🎮</h1>
-<p>Puan: <span id="puan">0</span></p>
+<body>
 
-<button onclick="arttir()">Tıkla!</button>
+<h1>💰 TYCOON PRO MAX SECURITY</h1>
+
+<h2>Puan: <span id="puan">0</span></h2>
+<h3>Tık Gücü: <span id="guc">1</span></h3>
+
+<button onclick="tikla()">TIKLA 💥</button>
+
+<p id="warn"></p>
+<h2 id="ban">🚫 HİLE TESPİT EDİLDİ</h2>
+
+<!-- 🛒 MARKET -->
+<div class="box">
+  <h3>🛒 Market</h3>
+  <button onclick="buyPower()">+1 Güç (50)</button>
+  <button onclick="buyAuto()">Auto (100)</button>
+</div>
+
+<!-- 🎟️ CODE -->
+<div class="box">
+  <h3>🎟️ Kod Sistemi</h3>
+  <input id="codeInput" placeholder="KOD">
+  <button onclick="useCode()">Kullan</button>
+  <p id="msg"></p>
+</div>
 
 <script>
-let puan = 0;
 
-function arttir() {
-  puan++;
-  document.getElementById("puan").innerText = puan;
+let puan = 0;
+let guc = 1;
+let auto = 0;
+
+let admin = false;
+let banned = false;
+let suspicious = 0;
+let used = [];
+
+let lastClick = 0;
+let clickLog = [];
+
+// ================= CLICK =================
+function tikla() {
+  if (banned) return;
+
+  if (!admin) detectCheat();
+
+  puan += guc;
+  update();
 }
+
+// ================= ANTI CHEAT =================
+function detectCheat() {
+  let now = Date.now();
+
+  if (now - lastClick < 120) {
+    warn("Çok hızlı tıklama!");
+  }
+
+  lastClick = now;
+
+  clickLog.push(now);
+  clickLog = clickLog.filter(t => now - t < 3000);
+
+  if (clickLog.length > 20) {
+    warn("Bot şüphesi!");
+  }
+}
+
+function warn(r) {
+  if (admin) return;
+
+  suspicious++;
+  document.getElementById("warn").innerText = "⚠️ " + r;
+
+  if (suspicious >= 3) {
+    banned = true;
+    document.getElementById("ban").style.display = "block";
+  }
+}
+
+// ================= MARKET =================
+function buyPower() {
+  if (puan >= 50) {
+    puan -= 50;
+    guc++;
+    update();
+  }
+}
+
+function buyAuto() {
+  if (puan >= 100) {
+    puan -= 100;
+    auto++;
+
+    setInterval(() => {
+      if (!banned) {
+        puan += auto;
+        update();
+      }
+    }, 1000);
+  }
+}
+
+// ================= CODE =================
+function useCode() {
+  let code = document.getElementById("codeInput").value.toUpperCase();
+
+  if (used.includes(code)) return msg("Kod kullanıldı");
+
+  if (code === "VIP") {
+    puan += 50;
+    msg("+50");
+  }
+  else if (code === "POWER") {
+    guc += 2;
+    msg("+2 güç");
+  }
+  else if (code === "ADMIN") {
+    admin = true;
+    msg("👑 ADMIN MODE");
+  }
+  else {
+    msg("Geçersiz");
+    return;
+  }
+
+  used.push(code);
+  update();
+}
+
+// ================= F12 / DEVTOOLS DETECT =================
+let devtools = false;
+
+setInterval(() => {
+  let threshold = 160;
+
+  if (
+    window.outerWidth - window.innerWidth > threshold ||
+    window.outerHeight - window.innerHeight > threshold
+  ) {
+    if (!devtools) {
+      devtools = true;
+      if (!admin) warn("F12 / DevTools açıldı!");
+    }
+  } else {
+    devtools = false;
+  }
+}, 500);
+
+// ================= UI =================
+function msg(t) {
+  document.getElementById("msg").innerText = t;
+}
+
+function update() {
+  document.getElementById("puan").innerText = puan;
+  document.getElementById("guc").innerText = guc;
+}
+
 </script>
 
 </body>
